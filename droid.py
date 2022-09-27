@@ -18,10 +18,12 @@ class Droid():
         await self.droid.write_gatt_char(0x000d, connectCode, False)
         await self.droid.write_gatt_char(0x000d, connectCode, False)
         print("Locked")
-        soundBank = bytearray.fromhex("27420f4444001f00")
-        await self.droid.write_gatt_char(0x000d, soundBank)
+        light_blink = bytearray.fromhex("2C000449020001ff01ff0aff00")
+        await self.droid.write_gatt_char(0x000d, light_blink)
         soundSelection = bytearray.fromhex("27420f4444001800")
         await self.droid.write_gatt_char(0x000d, soundSelection)
+        connect_sound = bytearray.fromhex("25000c421102")
+        await self.droid.write_gatt_char(0x000d, connect_sound)
 
     async def disconnect(self):
         print ("Disconnecting")
@@ -52,7 +54,7 @@ async def main():
     sleep (3)
     try:
         await arms.run_routine("05")
-        sleep (3)
+        sleep (5)
     finally:
         await arms.disconnect()
 asyncio.run(main())
