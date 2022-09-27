@@ -33,6 +33,11 @@ class Droid():
         finally:
             await self.droid.disconnect()
             print("Disconnected")
+
+    async def run_routine(self, routineId):
+        full_id = bytearray.fromhex("25000c42{}02".format(routineId))
+        await self.droid.write_gatt_char(0x000d, full_id)
+        
 def findDroid(candidate, data):
     if candidate.name == "DROID":
         return True
@@ -45,5 +50,9 @@ async def main():
     arms = Droid(myDroid)
     await arms.connect()
     sleep (3)
-    await arms.disconnect()
+    try:
+        await arms.run_routine("05")
+        sleep (3)
+    finally:
+        await arms.disconnect()
 asyncio.run(main())
