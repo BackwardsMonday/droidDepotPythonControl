@@ -1,26 +1,38 @@
 import asyncio
 from time import sleep
 from bleak import BleakScanner, BleakClient
-class droid():
-    def __init__(self, address):
-        print("initialing")
-        self.address = address
+class Droid():
+    def __init__(self, profile):
+        print("Initializing")
+        self.profile = profile
     async def connect(self):
         timeout=0.0
         print("Connecting")
-        async with BleakClient(self.address) as droid:
-            while not droid.is_connected and timeout < 10:
-                sleep (.1)
-                timeout += .1
-            print ("Connected!")
-            connectCode = bytearray.fromhex("222001")
-            await droid.write_gatt_char(0x000d, connectCode, False)
-            await droid.write_gatt_char(0x000d, connectCode, False)
-            print("Locked")
-            soundBank = bytearray.fromhex("27420f4444001f00")
-            await droid.write_gatt_char(0x000d, soundBank)
-            soundSelection = bytearray.fromhex("27420f4444001800")
-            await droid.write_gatt_char(0x000d, soundSelection)
+        self.droid = BleakClient(self.profile)
+        await self.droid.connect()
+        while not self.droid.is_connected and timeout < 10:
+            sleep (.1)
+            timeout += .1
+        print ("Connected!")
+        connectCode = bytearray.fromhex("222001")
+        await self.droid.write_gatt_char(0x000d, connectCode, False)
+        await self.droid.write_gatt_char(0x000d, connectCode, False)
+        print("Locked")
+        soundBank = bytearray.fromhex("27420f4444001f00")
+        await self.droid.write_gatt_char(0x000d, soundBank)
+        soundSelection = bytearray.fromhex("27420f4444001800")
+        await self.droid.write_gatt_char(0x000d, soundSelection)
+
+    async def disconnect(self):
+        print ("Disconnecting")
+        try:
+            soundBank = bytearray.fromhex("27420f4444001f08")
+            await self.droid.write_gatt_char(0x000d, soundBank)
+            soundSelection = bytearray.fromhex("27420f4444001808")
+            await self.droid.write_gatt_char(0x000d, soundSelection)
+        finally:
+            await self.droid.disconnect()
+            print("Disconnected")
 def findDroid(candidate, data):
     if candidate.name == "DROID":
         return True
@@ -30,6 +42,8 @@ def findDroid(candidate, data):
 async def main():
     myDroid = await BleakScanner.find_device_by_filter(findDroid)
     print (myDroid)
-    arms = droid(myDroid)
+    arms = Droid(myDroid)
     await arms.connect()
+    sleep (3)
+    await arms.disconnect()
 asyncio.run(main())
