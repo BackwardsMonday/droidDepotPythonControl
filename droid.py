@@ -1,9 +1,11 @@
 import asyncio
 from time import sleep
 from bleak import BleakScanner, BleakClient
+import pickle
 class Droid():
     def __init__(self, profile):
         print("Initializing")
+        self.disabledLeds = 0x00
         self.profile = profile
     async def connect(self):
         timeout=0.0
@@ -35,10 +37,42 @@ class Droid():
         finally:
             await self.droid.disconnect()
             print("Disconnected")
+    
+    async def led_disable_sound(self, leds):
+        ledDisableCommand = bytearray.fromhex(f"27420f4444004a{leds}")
+        await self.droid.write_gatt_char(0x000d, ledDisableCommand)
+        self.disabledLeds = self.disabledLeds|int(leds, 16)
+        print(self.disabledLeds)
 
-    async def play_sound(self, sound_id=None, bank_id=None, cycle=False):
-        if bank_id and self.soundbank != bank_id:
-            self.set_soundbank(bank_id)
+    async def led_enable_sound(self, leds):
+        ledEnableCommand = bytearray.fromhex(f"27420f4444004b{leds}")
+        await self.droid.write_gatt_char(0x000d, ledEnableCommand)
+        self.disabledLeds = self.disabledLeds-(int(leds, 16)&self.disabledLeds)
+        print(self.disabledLeds)
+        
+    
+    async def led_flash(self, leds, duration):
+        pass
+    
+    async def led_off(self, leds):
+        ledOffCommand = bytearray.fromhex( f"27420f44440049{leds}" )
+        await self.droid.write_gatt_char(0x000d, ledOffCommand)
+        print(f"{self.disabledLeds:02x}")
+        print((f"{(~self.disabledLeds & 0x1F):02x}"))
+        await self.led_enable_sound(f"{(~self.disabledLeds & 0x1F):02x}")
+
+    
+    async def led_on(self, leds):
+        ledOnCommand = bytearray.fromhex(f"27420f44440048{leds}")
+        await self.droid.write_gatt_char(0x000d, ledOnCommand)
+    
+    def move (self ):
+        pass
+    async def play_sound(self, sound_id=None, bank_id=None, cycle=False, volume=None):
+        if volume:
+            self.set_volume(volume)
+        if bank_id and (not hasattr(self, "soundbank") or self.soundbank != bank_id):
+            await self.set_soundbank(bank_id)
         if sound_id:
             soundSelection = bytearray.fromhex("27420f44440018{}".format(sound_id))
         elif cycle:
@@ -73,15 +107,25 @@ async def main():
     await arms.connect()
     sleep (3)
     try:
-        await arms.run_routine("05")
-        sleep (5)
-        await arms.set_soundbank("05")
-        await arms.play_sound("00")
-        sleep (5)
-        for i in range(5):
-            await arms.play_sound(cycle=True)
-            sleep(5)
+        # await arms.run_routine("05")
+        # sleep (5)
+        # await arms.set_soundbank("05")
+        # await arms.play_sound("00")
+        # sleep (5)
+        # for i in range(5):
+        #     await arms.play_sound(cycle=True)
+        #     sleep(5)
+        # await arms.play_sound("00", "00")
+        # sleep(8)
+        await arms.led_disable_sound("01")
         await arms.play_sound("00", "00")
+        sleep(10)
+        await arms.led_on("1f")
+        sleep(10)
+        await arms.led_off("1f")
+        await arms.play_sound("00", "00")
+        sleep(10)
+
 
     finally:
         await arms.disconnect()
