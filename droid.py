@@ -1,7 +1,7 @@
 import asyncio
 from time import sleep
 from bleak import BleakScanner, BleakClient
-import pickle
+
 class Droid():
     def __init__(self, profile):
         print("Initializing")
@@ -103,8 +103,8 @@ def findDroid(candidate, data):
 async def main():
     myDroid = await BleakScanner.find_device_by_filter(findDroid)
     print (myDroid)
-    arms = Droid(myDroid)
-    await arms.connect()
+    d = Droid(myDroid)
+    await d.connect()
     sleep (3)
     try:
         # await arms.run_routine("05")
@@ -117,16 +117,16 @@ async def main():
         #     sleep(5)
         # await arms.play_sound("00", "00")
         # sleep(8)
-        await arms.led_disable_sound("01")
-        await arms.play_sound("00", "00")
+        await d.led_disable_sound("01")
+        await d.play_sound("00", "00")
         sleep(10)
-        await arms.led_on("1f")
+        await d.led_on("1f")
         sleep(10)
-        await arms.led_off("1f")
-        await arms.play_sound("00", "00")
+        await d.led_off("1f")
+        await d.play_sound("00", "00")
         sleep(10)
 
 
     finally:
-        await arms.disconnect()
+        await d.disconnect()
 asyncio.run(main())
