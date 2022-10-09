@@ -137,7 +137,7 @@ async def main():
         await d.led_off("1f")
         await d.play_sound("00", "00")
         sleep(10)
-        
+
     except OSError as err:
         print(f"Discovery failed due to operating system: {err}")
     except BleakError as err:
@@ -145,4 +145,7 @@ async def main():
 
     finally:
         await d.disconnect()
-asyncio.run(main())
+
+if __name__ == "__main__":
+    asyncio.run(main())
+    
