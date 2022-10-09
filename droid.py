@@ -137,7 +137,11 @@ async def main():
         await d.led_off("1f")
         await d.play_sound("00", "00")
         sleep(10)
-
+        
+    except OSError as err:
+        print(f"Discovery failed due to operating system: {err}")
+    except BleakError as err:
+        print(f"Discovery failed due to Bleak: {err}")
 
     finally:
         await d.disconnect()
