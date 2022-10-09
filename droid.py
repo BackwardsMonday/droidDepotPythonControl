@@ -7,6 +7,7 @@ class Droid():
         print("Initializing")
         self.disabledLeds = 0x00
         self.profile = profile
+
     async def connect(self):
         timeout=0.0
         print("Connecting")
@@ -68,6 +69,7 @@ class Droid():
     
     def move (self ):
         pass
+    
     async def play_sound(self, sound_id=None, bank_id=None, cycle=False, volume=None):
         if volume:
             self.set_volume(volume)
@@ -148,4 +150,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    
