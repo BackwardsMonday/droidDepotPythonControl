@@ -1,6 +1,6 @@
 import asyncio
 from time import sleep
-from bleak import BleakScanner, BleakClient
+from bleak import BleakScanner, BleakClient, BleakError
 
 class Droid():
     def __init__(self, profile):
@@ -101,12 +101,24 @@ def findDroid(candidate, data):
         return False
 
 async def main():
-    myDroid = await BleakScanner.find_device_by_filter(findDroid)
-    print (myDroid)
+    myDroid = None
+
+    while myDroid is None or myDroid == "None":
+        try:
+            myDroid = await BleakScanner.find_device_by_filter(findDroid)
+            if myDroid is None:
+                print("Droid discovery timed out. Retrying...")
+        except BleakError as err:
+            print("Droid discovery failed. Retrying...")
+            continue
+
+    print (f"Astromech successfully discovered: [ {myDroid} ]")
+
     d = Droid(myDroid)
-    await d.connect()
-    sleep (3)
+    
     try:
+        await d.connect()
+        sleep (3)
         # await arms.run_routine("05")
         # sleep (5)
         # await arms.set_soundbank("05")
