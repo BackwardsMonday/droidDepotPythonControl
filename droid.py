@@ -102,21 +102,34 @@ def findDroid(candidate, data):
     else:
         return False
 
-async def main():
+async def discoverDroid(retry=False):
     myDroid = None
 
-    while myDroid is None or myDroid == "None":
+    while retry and myDroid is None:
         try:
             myDroid = await BleakScanner.find_device_by_filter(findDroid)
             if myDroid is None:
-                print("Droid discovery timed out. Retrying...")
+                if not retry:
+                    print("Droid discovery timed out.")
+                    return
+                else:
+                    print("Droid discovery timed out. Retrying...")
+                    continue
         except BleakError as err:
             print("Droid discovery failed. Retrying...")
             continue
 
-    print (f"Astromech successfully discovered: [ {myDroid} ]")
 
+    print (f"Astromech successfully discovered: [ {myDroid} ]")
+    
     d = Droid(myDroid)
+    return d
+
+
+
+async def main():
+
+    d = await discoverDroid()
     
     try:
         await d.connect()
