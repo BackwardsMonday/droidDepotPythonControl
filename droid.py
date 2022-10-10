@@ -129,7 +129,7 @@ async def discoverDroid(retry=False):
 
 async def main():
 
-    d = await discoverDroid()
+    d = await discoverDroid(retry=True)
     
     try:
         await d.connect()
