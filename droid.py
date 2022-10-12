@@ -7,6 +7,19 @@ class Droid():
         print("Initializing")
         self.disabledLeds = 0x00
         self.profile = profile
+
+    # assumes theta in degrees and r = 0 to 100 %
+    # returns a tuple of percentages: (left_thrust, right_thrust)
+    def __throttle_angle_to_thrust__(r, theta):
+        theta = ((theta + 180) % 360) - 180  # normalize value to [-180, 180)
+        r = min(max(0, r), 100)              # normalize value to [0, 100]
+        v_a = r * (45 - theta % 90) / 45          # falloff of main motor
+        v_b = min(100, 2 * r + v_a, 2 * r - v_a)  # compensation of other motor
+        if theta < -90: return -v_b, -v_a
+        if theta < 0:   return -v_a, v_b
+        if theta < 90:  return v_b, v_a
+        return v_a, -v_b
+    
     async def connect(self):
         timeout=0.0
         print("Connecting")
@@ -66,8 +79,9 @@ class Droid():
         ledOnCommand = bytearray.fromhex(f"27420f44440048{leds}")
         await self.droid.write_gatt_char(0x000d, ledOnCommand)
     
-    def move (self ):
-        pass
+    def move (self, degrees, duration):
+        thrust = self.__throttle_angle_to_thrust__(degrees)
+        
     async def play_sound(self, sound_id=None, bank_id=None, cycle=False, volume=None):
         if volume:
             self.set_volume(volume)
