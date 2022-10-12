@@ -1,12 +1,13 @@
 import asyncio
 from time import sleep
-from bleak import BleakScanner, BleakClient
-import pickle
+from bleak import BleakScanner, BleakClient, BleakError
+
 class Droid():
     def __init__(self, profile):
         print("Initializing")
         self.disabledLeds = 0x00
         self.profile = profile
+
     async def connect(self):
         timeout=0.0
         print("Connecting")
@@ -68,6 +69,7 @@ class Droid():
     
     def move (self ):
         pass
+    
     async def play_sound(self, sound_id=None, bank_id=None, cycle=False, volume=None):
         if volume:
             self.set_volume(volume)
@@ -100,13 +102,38 @@ def findDroid(candidate, data):
     else:
         return False
 
+async def discoverDroid(retry=False):
+    myDroid = None
+
+    while retry and myDroid is None:
+        try:
+            myDroid = await BleakScanner.find_device_by_filter(findDroid)
+            if myDroid is None:
+                if not retry:
+                    print("Droid discovery timed out.")
+                    return
+                else:
+                    print("Droid discovery timed out. Retrying...")
+                    continue
+        except BleakError as err:
+            print("Droid discovery failed. Retrying...")
+            continue
+
+
+    print (f"Astromech successfully discovered: [ {myDroid} ]")
+    
+    d = Droid(myDroid)
+    return d
+
+
+
 async def main():
-    myDroid = await BleakScanner.find_device_by_filter(findDroid)
-    print (myDroid)
-    arms = Droid(myDroid)
-    await arms.connect()
-    sleep (3)
+
+    d = await discoverDroid(retry=True)
+    
     try:
+        await d.connect()
+        sleep (3)
         # await arms.run_routine("05")
         # sleep (5)
         # await arms.set_soundbank("05")
@@ -117,16 +144,22 @@ async def main():
         #     sleep(5)
         # await arms.play_sound("00", "00")
         # sleep(8)
-        await arms.led_disable_sound("01")
-        await arms.play_sound("00", "00")
+        await d.led_disable_sound("01")
+        await d.play_sound("00", "00")
         sleep(10)
-        await arms.led_on("1f")
+        await d.led_on("1f")
         sleep(10)
-        await arms.led_off("1f")
-        await arms.play_sound("00", "00")
+        await d.led_off("1f")
+        await d.play_sound("00", "00")
         sleep(10)
 
+    except OSError as err:
+        print(f"Discovery failed due to operating system: {err}")
+    except BleakError as err:
+        print(f"Discovery failed due to Bleak: {err}")
 
     finally:
-        await arms.disconnect()
-asyncio.run(main())
+        await d.disconnect()
+
+if __name__ == "__main__":
+    asyncio.run(main())
